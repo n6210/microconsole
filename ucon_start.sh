@@ -1,0 +1,10 @@
+#/bin/sh
+
+PORT_NR="1"
+PORT_LOCATION_="/dev/ttyUSB"
+UART_SPEED="115200"
+TTS=""
+
+./ucon ${PORT_LOCATION_}${PORT_NR $UART_SPEED} ${TTS}
+
+

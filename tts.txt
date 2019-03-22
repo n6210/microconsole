@@ -1,0 +1,9 @@
+trigger - text to find
+commad - text injected to uart when trigerr is found
+
+trig2
+cmd2
+
+trig3
+cmd3
+
