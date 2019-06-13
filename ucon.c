@@ -387,15 +387,15 @@ int main(int argc, char **argv)
 	char *sl = "-----------------------------------------------------------";
 
 	if (argc < 2) {
-	    fprintf(stderr, "\nucon - micro console for high speed ports (FTDI)\n"
+	    fprintf(stderr, "\nuc - micro console for high speed ports (FTDI)\n"
 			"Copyright 2011-2018 Taddy G. <fotonix0@pm.me>\n");
 
-	    fprintf(stderr, "Usage: ucon <device> <speed> [optional_ttc_file]\n"
+	    fprintf(stderr, "Usage: uc <device> <speed> [optional_ttc_file]\n"
 			"Supported speeds 50 bps - 4 Mbps\n"
 			"Default speed is 115200 bps\n"
 			"Examples:\n"
-			"  ucon /dev/ttyUSB0 115200\n"
-			"  ucon /dev/ttyUSB0 921600 trigger_to_command.txt\n"
+			"  uc /dev/ttyUSB0 115200\n"
+			"  uc /dev/ttyUSB0 921600 trigger_to_command.txt\n"
 	    );
 
 	    return 1;
