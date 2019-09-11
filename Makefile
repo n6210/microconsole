@@ -28,6 +28,7 @@ clean:
 
 install: ${TARGET}
 	@install -s -m 755 $(TARGET) $(INSTALL_DIR)
+	@rm $(INSTALL_DIR)/$(TLINK)
 	@ln -s $(INSTALL_DIR)/$(TARGET) $(INSTALL_DIR)/$(TLINK)
 
 uninstall:

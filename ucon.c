@@ -20,7 +20,7 @@
  *    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -382,11 +382,12 @@ int main(int argc, char **argv)
 	struct pollfd stdin_fd;
 	struct termios flags; // for save terminal state
 	struct termios oldterminfo; // for serial port
-	int spd, speed = 115200;
+	int spd, speed = 921600; //115200;
+	char *port = "/dev/ttyUSB0";
 
 	char *sl = "-----------------------------------------------------------";
 
-	if (argc < 2) {
+	if (argc == 1) {
 	    fprintf(stderr, "\nuc - micro console for high speed ports (FTDI)\n"
 			"Copyright 2011-2018 Taddy G. <fotonix0@pm.me>\n");
 
@@ -397,9 +398,8 @@ int main(int argc, char **argv)
 			"  uc /dev/ttyUSB0 115200\n"
 			"  uc /dev/ttyUSB0 921600 trigger_to_command.txt\n"
 	    );
-
-	    return 1;
-	}
+	} else
+		port = argv[1];
 
 	if (argc > 2)
 	    speed = atoi(argv[2]);
@@ -418,7 +418,7 @@ int main(int argc, char **argv)
 					"Help: Ctrl-A H\n");
 	fprintf(stderr, "%s\n\n", sl);
 
-	fd = open(argv[1], O_RDWR | O_NOCTTY | O_NONBLOCK);
+	fd = open(port, O_RDWR | O_NOCTTY | O_NONBLOCK);
 	if (fd < 0) {
 	    perror("Serial port open");
 	    return 1;
