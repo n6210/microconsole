@@ -299,12 +299,13 @@ void reload_trigcom_file(char *fname)
 void *print_from_serial(void *ptr)
 {
 	int n;
-	char buff[4096 * 2];
+	char *nl = NULL;
+	char buff[2048];
 
 	while (1) {
 		errno = 0;
 		n = poll(&pollfds, 1, -1);
-		if (n == 1) {
+		if (n > 0) {
 			if (pollfds.revents == POLLIN) {
 				errno = 0;
 				n = read(fd, buff, sizeof(buff));
@@ -320,20 +321,29 @@ void *print_from_serial(void *ptr)
 					reload_trigcom_file(mfname);
 				}
 
-				if (date_time) {
+				nl = strchr(buff, '\n');
+				if (date_time && nl) {
 					time_t t;
 					struct tm *lt;
+					char *tok = strtok(buff, "\n");
 
 					time(&t);
 					lt = localtime(&t);
 
-					fprintf(stderr, "%4d-%02d-%02d %2d:%02d:%02d | ",
-							lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday,
-							lt->tm_hour, lt->tm_min, lt->tm_sec);
-				}
+					if (!tok) {
+						tok = "";
+					}
+					if (strlen(nl) == 0) {
+						nl = "";
+					}
 
-				fwrite(buff, n, 1, stderr);
-				//{ int i; for(i = 0; i < n; i++) fprintf(stderr, "%02X", buff[i]);}
+					fprintf(stderr, "%s\n%4d-%02d-%02d %2d:%02d:%02d | %s", tok,
+							lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday,
+							lt->tm_hour, lt->tm_min, lt->tm_sec, nl);
+				} else {
+					fwrite(buff, n, 1, stderr);
+					//{ int i; for(i = 0; i < n; i++) fprintf(stderr, "%02X", buff[i]);}
+				}
 				if (trigtocom_enabled && trigtocom_cnt) {
 					int i, x;
 					for (i = 0; i < trigtocom_cnt; i++) {
