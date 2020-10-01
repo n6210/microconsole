@@ -299,8 +299,9 @@ void reload_trigcom_file(char *fname)
 void *print_from_serial(void *ptr)
 {
 	int n;
-	char *nl = NULL;
+	char *token;
 	char buff[2048];
+	char *delim = "\n";
 
 	while (1) {
 		errno = 0;
@@ -308,6 +309,7 @@ void *print_from_serial(void *ptr)
 		if (n > 0) {
 			if (pollfds.revents == POLLIN) {
 				errno = 0;
+				usleep(20000);
 				n = read(fd, buff, sizeof(buff));
 				if (n <= 0)	{
 					if ((n < 0) && (errno != EINTR)) {
@@ -321,25 +323,27 @@ void *print_from_serial(void *ptr)
 					reload_trigcom_file(mfname);
 				}
 
-				nl = strchr(buff, '\n');
-				if (date_time && nl) {
+				if (date_time) {
 					time_t t;
 					struct tm *lt;
-					char *tok = strtok(buff, "\n");
 
 					time(&t);
 					lt = localtime(&t);
 
-					if (!tok) {
-						tok = "";
-					}
-					if (strlen(nl) == 0) {
-						nl = "";
-					}
+					//fprintf(stderr, " >>%s<< ", buff);
 
-					fprintf(stderr, "%s\n%4d-%02d-%02d %2d:%02d:%02d | %s", tok,
-							lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday,
-							lt->tm_hour, lt->tm_min, lt->tm_sec, nl);
+					token = strchr(buff, '\n');
+					if (token == NULL) {
+						fprintf(stderr, "%s", buff);
+					} else {
+						token = strtok(buff, delim);
+						while (token != NULL) {
+							fprintf(stderr, "%s\n%4d-%02d-%02d %2d:%02d:%02d | ", token,
+									    lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday,
+									    lt->tm_hour, lt->tm_min, lt->tm_sec);
+							token = strtok(NULL, delim);
+						}
+					}
 				} else {
 					fwrite(buff, n, 1, stderr);
 					//{ int i; for(i = 0; i < n; i++) fprintf(stderr, "%02X", buff[i]);}
