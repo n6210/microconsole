@@ -11,7 +11,6 @@ CFLAGS	= -Wall
 #-Werror
 SRCS	= ucon.c
 TARGET	= uc
-TLINK	= ucon
 
 
 all:${TARGET}
@@ -28,8 +27,6 @@ clean:
 
 install: ${TARGET}
 	@install -s -m 755 $(TARGET) $(INSTALL_DIR)
-	@rm -f $(INSTALL_DIR)/$(TLINK)
-	@ln -s $(INSTALL_DIR)/$(TARGET) $(INSTALL_DIR)/$(TLINK)
 
 uninstall:
-	@rm -f $(INSTALL_DIR)/$(TLINK) $(INSTALL_DIR)/$(TARGET)
+	@rm -f $(INSTALL_DIR)/$(TARGET)
