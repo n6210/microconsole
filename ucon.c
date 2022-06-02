@@ -52,15 +52,15 @@
 #define CNORM "\033[0m"
 
 int speed_table[] = {
-    50, 75, 110, 134, 150, 200, 300, 600, 1200, 2400, 4800,
-    9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600,
-    1000000, 1152000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000, 0
+	50, 75, 110, 134, 150, 200, 300, 600, 1200, 2400, 4800,
+	9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600,
+	1000000, 1152000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000, 0
 };
 
 int speed_value[] = {
-    B50, B75, B110, B134, B150, B200, B300, B600, B1200, B2400, B4800,
-    B9600, B19200, B38400, B57600, B115200, B230400, B460800, B921600,
-    B1000000, B1152000, B1500000, B2000000, B2500000, B3000000, B3500000, B4000000, B0
+	B50, B75, B110, B134, B150, B200, B300, B600, B1200, B2400, B4800,
+	B9600, B19200, B38400, B57600, B115200, B230400, B460800, B921600,
+	B1000000, B1152000, B1500000, B2000000, B2500000, B3000000, B3500000, B4000000, B0
 };
 
 #define M_STR_LEN	1024
@@ -79,138 +79,132 @@ int fd;
 char *mfname = NULL;
 
 char *help = {
-    "Ctrl-X - exit\n"
-    "Ctrl-A or Ctrl-D is a command key combination.\n"
-    "Press it and next command letter:\n"
-    "H/h - print help\n"
-    "Q/q - exit\n"
-    "C/c - clear screen\n"
-    "T/t - enable/disable time stamp at start of each line\n"
-    "M/m - trigger to command enable/disable\n"
-    "U/u - increase port speed\n"
-    "D/d - decrease port speed\n\n"
-    "Example:\n"
-    "  Ctrl-D C or Ctrl-A C - clear the screen\n\n"
+	"Ctrl-X - exit\n"
+	"Ctrl-A or Ctrl-D is a command key combination.\n"
+	"Press it and next command letter:\n"
+	"H/h - print help\n"
+	"Q/q - exit\n"
+	"C/c - clear screen\n"
+	"T/t - enable/disable time stamp at start of each line\n"
+	"M/m - trigger to command enable/disable\n"
+	"U/u - increase port speed\n"
+	"D/d - decrease port speed\n\n"
+	"Example:\n"
+	"  Ctrl-D C or Ctrl-A C - clear the screen\n\n"
 };
 
 int find_speed(int speed)
 {
-    int idx = 0;
+	int idx = 0;
 
-    while (1) {
+	while (1) {
 		int spd = speed_table[idx];
 
 		if (spd == 0) break;
 
 		if (speed <= spd) {
-	    	//fprintf(stderr, "IDX: %d\n", idx);
+			//fprintf(stderr, "IDX: %d\n", idx);
 			return idx;
 		} else
-	    	idx++;
-    }
+			idx++;
+	}
 
-    return 15; // By default return 115200
+	return 15; // By default return 115200
 }
 
 int set_serial_speed(int fd, int speed, struct termios *oterminfo)
 {
-    struct termios attr;
+	struct termios attr;
 
-    memset(oterminfo, 0, sizeof(attr));
-    memset(&attr, 0, sizeof(attr));
+	memset(oterminfo, 0, sizeof(attr));
+	memset(&attr, 0, sizeof(attr));
 
-    if (tcgetattr(fd, oterminfo) == -1) {
-        perror("tcgetattr");
-        return -1;
-    }
+	if (tcgetattr(fd, oterminfo) == -1) {
+		perror("tcgetattr");
+		return -1;
+	}
 
 	memcpy(&attr, oterminfo, sizeof(attr));
 
-    cfmakeraw(&attr);
-	attr.c_cflag |= CLOCAL;
+	attr.c_cflag = CS8 | CREAD | CLOCAL;
+	attr.c_oflag = 0;
+	attr.c_iflag = 0;
+	attr.c_lflag = 0;
 
-/*
-    attr.c_iflag = IGNBRK;
-    attr.c_cflag = CREAD | CLOCAL | CS8 | speed;
-    attr.c_oflag = 0;
-    attr.c_lflag = 0; // ICANON;
-    attr.c_cc[VMIN] = 1;
-    attr.c_cc[VTIME] = 0;
-*/
-    if (cfsetspeed(&attr, speed) < 0) {
+	if (cfsetspeed(&attr, speed) < 0) {
 		perror("cfsetspeed");
-	    return -1;
+		return -1;
 	}
 
-    tcflush(fd, TCIFLUSH);
+	tcflush(fd, TCIFLUSH);
 
-    if (tcsetattr(fd, TCSANOW, &attr)) {
-        fprintf(stderr, "Failed to set terminal state\n");
-        return -1;
-    }
+	if (tcsetattr(fd, TCSANOW, &attr)) {
+		fprintf(stderr, "Failed to set terminal state\n");
+		return -1;
+	}
 
-    return 0;
+	return 0;
 }
 
 void set_stdin(struct termios *sflags)
 {
-    const int fd = fileno(stdin);
-    struct termios flags;
+	const int fd = fileno(stdin);
+	struct termios flags;
 
-    if (tcgetattr(fd, sflags) < 0) {
+	if (tcgetattr(fd, sflags) < 0) {
 		fprintf(stderr, "Unable to save terminal settings\n");
 		return;
-    }
+	}
 
 	memcpy(&flags, sflags, sizeof(flags)); // make a working copy
 
-    flags.c_lflag &= ~(ICANON | ECHO); // set raw (unset canonical modes)
-    flags.c_cc[VMIN] = 0; // i.e. min 1 char for blocking, 0 chars for non-blocking
-    flags.c_cc[VTIME] = 0; // block if waiting for char
+	flags.c_lflag &= ~(ICANON | ECHO); // set raw (unset canonical modes)
+	flags.c_cc[VMIN] = 0; // i.e. min 1 char for blocking, 0 chars for non-blocking
+	flags.c_cc[VTIME] = 0; // block if waiting for char
 
-    if (tcsetattr(fd, TCSANOW, &flags) < 0) {
+	if (tcsetattr(fd, TCSANOW, &flags) < 0) {
 		fprintf(stderr, "Unable to change terminal setting\n");
 		return;
-    }
+	}
 }
 
 void unset_stdin(struct termios *flags)
 {
-    const int fd = fileno(stdin);
+	const int fd = fileno(stdin);
 
-    if (tcsetattr(fd,TCSANOW, flags) < 0) {
+	if (tcsetattr(fd,TCSANOW, flags) < 0) {
 		printf("Unable to restore terminal settings\n");
 		return;
-    }
+	}
 }
 
 static void ctrl_c(int sig)
 {
-    //fprintf(stderr, "\nCtrl-C captured\n");
-    ctrl_c_key = 1;
+	//fprintf(stderr, "\nCtrl-C captured\n");
+	ctrl_c_key = 1;
 }
 
 void set_signal_handler(int sig, int flags, void (*sighandler)(int))
 {
-    struct sigaction sa;
+	struct sigaction sa;
 
-    sa.sa_flags = flags ? SA_RESTART : 0;
-    sa.sa_handler = sighandler;
-    sigaction(sig, &sa, NULL);
+	sa.sa_flags = flags ? SA_RESTART : 0;
+	sa.sa_handler = sighandler;
+	sigaction(sig, &sa, NULL);
 }
 
 int new_speed(int fd, int idx)
 {
-    struct termios otinfo2;
-    int ret;
+	struct termios otinfo2;
+	int ret;
 
-    ret = set_serial_speed(fd, speed_value[idx], &otinfo2);
-    if (ret)
+	ret = set_serial_speed(fd, speed_value[idx], &otinfo2);
+	if (ret)
 		fprintf(stderr, "\nUnable to set speed %d\n", speed_table[idx]);
-    else
+	else
 		fprintf(stderr, "\nNew speed set to "CGREB"%d"CNORM" bps\n", speed_table[idx]);
 
-    return ret;
+	return ret;
 }
 
 int file_is_modified(const char *path) {
@@ -339,8 +333,8 @@ void *print_from_serial(void *ptr)
 						token = strtok(buff, delim);
 						while (token != NULL) {
 							fprintf(stderr, "%s\n%4d-%02d-%02d %2d:%02d:%02d | ", token,
-									    lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday,
-									    lt->tm_hour, lt->tm_min, lt->tm_sec);
+										lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday,
+										lt->tm_hour, lt->tm_min, lt->tm_sec);
 							token = strtok(NULL, delim);
 						}
 					}
@@ -402,21 +396,21 @@ int main(int argc, char **argv)
 	char *sl = "-----------------------------------------------------------";
 
 	if (argc == 1) {
-	    fprintf(stderr, "\nuc - micro console for high speed ports (FTDI)\n"
+		fprintf(stderr, "\nuc - micro console for high speed ports (FTDI)\n"
 			"Copyright 2011-2018 Taddy G. <fotonix0@pm.me>\n");
 
-	    fprintf(stderr, "Usage: uc <device> <speed> [optional_ttc_file]\n"
+		fprintf(stderr, "Usage: uc <device> <speed> [optional_ttc_file]\n"
 			"Supported speeds 50 bps - 4 Mbps\n"
 			"Default speed is 115200 bps\n"
 			"Examples:\n"
 			"  uc /dev/ttyUSB0 115200\n"
 			"  uc /dev/ttyUSB0 921600 trigger_to_command.txt\n"
-	    );
+		);
 	} else
 		port = argv[1];
 
 	if (argc > 2)
-	    speed = atoi(argv[2]);
+		speed = atoi(argv[2]);
 
 	if (argc >3) {
 		if (read_trigtocom_file(argv[3], true) == 0)
@@ -434,8 +428,8 @@ int main(int argc, char **argv)
 
 	fd = open(port, O_RDWR | O_NOCTTY | O_NONBLOCK);
 	if (fd < 0) {
-	    perror("Serial port open");
-	    return 1;
+		perror("Serial port open");
+		return 1;
 	}
 
 	if (fcntl(fd, F_SETFL, O_RDWR) < 0) {
@@ -460,19 +454,19 @@ int main(int argc, char **argv)
 
 	// Wow - we have to set some speed and then change it - hmm
 	if (set_serial_speed(fd, speed_value[11], &oldterminfo) ||
-	    set_serial_speed(fd, speed_value[spd], &oldterminfo))
+		set_serial_speed(fd, speed_value[spd], &oldterminfo))
 		return 1;
 
 #ifdef AUTO_RESET
 	/* special handshakes */
 	if (ioctl(fd, TIOCMGET, &status) == -1)	{
-	    perror("handshake(): TIOCMGET");
+		perror("handshake(): TIOCMGET");
 	}
 	// RESET_N asserted
 	status |= TIOCM_DTR;
 	if (ioctl(fd, TIOCMSET, &status) == -1)	{
-	    perror("handshake(): TIOCMSET");
-	    return 1;
+		perror("handshake(): TIOCMSET");
+		return 1;
 	}
 	fprintf(stderr, "Reset_N (DTR) asserted\n");
 	// pause
@@ -491,8 +485,8 @@ int main(int argc, char **argv)
 	// RESET_N deasserted
 	status &= ~TIOCM_DTR;
 	if (ioctl(fd, TIOCMSET, &status) == -1) {
-	    perror("handshake(): TIOCMSET");
-	    return 1;
+		perror("handshake(): TIOCMSET");
+		return 1;
 	}
 	fprintf(stderr, "Reset_N (DTR) deasserted\n");
 #endif
@@ -514,7 +508,7 @@ int main(int argc, char **argv)
 	}
 
 	while (!go_exit) {
-	    //Very simple terminal ;)
+		//Very simple terminal ;)
 		if (poll(&stdin_fd, 1, 1) == 1) {
 			memset(bufin, 0, sizeof(bufin));
 			n = read(0, bufin, sizeof(bufin));
@@ -592,40 +586,40 @@ int main(int argc, char **argv)
 							}
 					}
 					command = 0;
-		    	}
-		    	else
-		    	{
+				}
+				else
+				{
 					// Try to catch some CTRL keys
-		        	switch (bufin[0])
-		        	{
-		        	case 1: //CTRL-A
-		    		    command = 1;
-		    		    break;
-		        	case 4: //CTRL-D
-		    		    command = 2;
-		    		    break;
+					switch (bufin[0])
+					{
+					case 1: //CTRL-A
+						command = 1;
+						break;
+					case 4: //CTRL-D
+						command = 2;
+						break;
 					case 24:
 						go_exit = 1;
 						break;
-		        	default:
+					default:
 						if (write(fd, bufin, n) < 0)
-			    		{
+						{
 							fprintf(stderr,"Serial port write access error\n");
 							break;
 							goto out;
-			    		}
+						}
 					}
-		    	}
+				}
 			}
-	    }
+		}
 
-	    if (ctrl_c_key == 1)
-	    {
+		if (ctrl_c_key == 1)
+		{
 			bufin[0] = 0x3;
 			write(fd, bufin, 1);
 			ctrl_c_key = 0;
 			//fprintf(stderr, "Ctrl-C sent\n");
-	    }
+		}
 	}
 
 out:
